@@ -30,10 +30,17 @@ public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, S
     private var purchasedProductIdentifiers:Set<String>
     private var productsRequest:SKProductsRequest
     private var completitionHandler:((success:Bool, products:[SKProduct]?, error:NSError?)->())?
+    private var userDefaults:NSUserDefaults = NSUserDefaults.standardUserDefaults()
     
     public var inAppProducts:[SKProduct]?
     public var didFinishRequestingProducts:Bool?
     public var delegate:InAppPurchaseControllerDelegate?
+    public var userDefaultsSuit:String? = nil  {
+        didSet {
+            guard let userDefaults = NSUserDefaults(suiteName: userDefaultsSuit) else { return }
+            self.userDefaults = userDefaults
+        }
+    }
 
     
     // MARK - Initializers
@@ -70,6 +77,9 @@ public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, S
     }
     
     public func isProductPurchased(productIdentifier:String) -> Bool {
+//        #if DEBUG
+//            return true
+//        #endif
         return self.purchasedProductIdentifiers.contains(productIdentifier)
     }
     
@@ -82,7 +92,7 @@ public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, S
         var purchasedProductIdentifiers:Set<String> = []
         
         for productIdentifier in productIdentifiers {
-            if (NSUserDefaults.standardUserDefaults().boolForKey(productIdentifier)) {
+            if (userDefaults.boolForKey(productIdentifier)) {
                 purchasedProductIdentifiers.insert(productIdentifier)
             }
         }
@@ -99,7 +109,7 @@ public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, S
     // MARK: - Receipt Validation Return
     private func validatedReceiptForTransaction(paymentTransaction:SKPaymentTransaction, validated:Bool) {
         if (validated == true) {
-            NSUserDefaults.standardUserDefaults().setBool(true, forKey: paymentTransaction.payment.productIdentifier)
+            userDefaults.setBool(true, forKey: paymentTransaction.payment.productIdentifier)
             self.purchasedProductIdentifiers.insert(paymentTransaction.payment.productIdentifier)
         }
         self.delegate?.inAppPurchaseController?(self, didFinishValidatingTransactionReceipt: paymentTransaction, withStatus: validated)

@@ -11,33 +11,33 @@ import StoreKit
 import ExtensionKit
 
 @objc public protocol InAppPurchaseControllerDelegate {
-    optional func inAppPurchaseController(controller:InAppPurchaseController, didFinishRequestingProducts products:[SKProduct])
-    optional func inAppPurchaseController(controller:InAppPurchaseController, didFailRequestingProductsWithError error:NSError)
-    optional func inAppPurchaseController(controller:InAppPurchaseController, didFinishValidatingTransactionReceipt transaction:SKPaymentTransaction, withStatus status:Bool)
-    optional func inAppPurchaseController(controller:InAppPurchaseController, didUpdatePaymentTransaction transaction:SKPaymentTransaction, withError error:NSError?)
-    optional func inAppPurchaseController(controller:InAppPurchaseController, restoreCompletedTransactionsFailedWithError error:NSError)
-    optional func inAppPurchaseController(controller:InAppPurchaseController, didRemoveTransactions transactions:[SKPaymentTransaction])
-    optional func inAppPurchaseController(controller:InAppPurchaseController, didUpdateDownloads downloads:[SKDownload])
-    optional func inAppPurchaseController(controller:InAppPurchaseController, didFailTransaction transaction:SKPaymentTransaction)
-    optional func inAppPurchaseControllerDidFinishRestoringTransactions(controller:InAppPurchaseController)
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, didFinishRequestingProducts products:[SKProduct])
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, didFailRequestingProductsWithError error:NSError)
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, didFinishValidatingTransactionReceipt transaction:SKPaymentTransaction, withStatus status:Bool)
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, didUpdatePaymentTransaction transaction:SKPaymentTransaction, withError error:NSError?)
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, restoreCompletedTransactionsFailedWithError error:NSError)
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, didRemoveTransactions transactions:[SKPaymentTransaction])
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, didUpdateDownloads downloads:[SKDownload])
+    @objc optional func inAppPurchaseController(_ controller:InAppPurchaseController, didFailTransaction transaction:SKPaymentTransaction)
+    @objc optional func inAppPurchaseControllerDidFinishRestoringTransactions(_ controller:InAppPurchaseController)
 }
 
-public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, SKProductsRequestDelegate {
+open class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, SKProductsRequestDelegate {
     
-    public static let defaultController = InAppPurchaseController()
+    open static let defaultController = InAppPurchaseController()
     
-    private var productIdentifiers:Set<String>?
-    private var purchasedProductIdentifiers:Set<String>
-    private var productsRequest:SKProductsRequest
-    private var completitionHandler:((success:Bool, products:[SKProduct]?, error:NSError?)->())?
-    private var userDefaults:NSUserDefaults = NSUserDefaults.standardUserDefaults()
+    fileprivate var productIdentifiers:Set<String>?
+    fileprivate var purchasedProductIdentifiers:Set<String>
+    fileprivate var productsRequest:SKProductsRequest
+    fileprivate var completitionHandler:((_ success:Bool, _ products:[SKProduct]?, _ error:NSError?)->())?
+    fileprivate var userDefaults:UserDefaults = UserDefaults.standard
     
-    public var inAppProducts:[SKProduct]?
-    public var didFinishRequestingProducts:Bool?
-    public var delegate:InAppPurchaseControllerDelegate?
-    public var userDefaultsSuit:String? = nil  {
+    open var inAppProducts:[SKProduct]?
+    open var didFinishRequestingProducts:Bool?
+    open var delegate:InAppPurchaseControllerDelegate?
+    open var userDefaultsSuit:String? = nil  {
         didSet {
-            guard let userDefaults = NSUserDefaults(suiteName: userDefaultsSuit) else { return }
+            guard let userDefaults = UserDefaults(suiteName: userDefaultsSuit) else { return }
             self.userDefaults = userDefaults
         }
     }
@@ -55,28 +55,28 @@ public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, S
     }
     
     // MARK: - Purchase & Restore
-    public func setupController(productIdentifiers:Set<String>) {
+    open func setupController(_ productIdentifiers:Set<String>) {
         self.registerAsTransactionObserver(self)
         self.productIdentifiers = productIdentifiers
         self.purchasedProductIdentifiers = self.getPurchasedProducts(productIdentifiers)
         self.productsRequest = self.setupProductsRequest(productIdentifiers, delegate: self)
     }
     
-    public func requestProducts() {
+    open func requestProducts() {
         self.productsRequest.start()
         self.didFinishRequestingProducts = false
     }
     
-    public func purchaseProduct(product:SKProduct) {
+    open func purchaseProduct(_ product:SKProduct) {
         let productPayment = SKPayment(product: product)
-        SKPaymentQueue.defaultQueue().addPayment(productPayment)
+        SKPaymentQueue.default().add(productPayment)
     }
     
-    public func restoreCompletedTransactions() {
-        SKPaymentQueue.defaultQueue().restoreCompletedTransactions()
+    open func restoreCompletedTransactions() {
+        SKPaymentQueue.default().restoreCompletedTransactions()
     }
     
-    public func isProductPurchased(productIdentifier:String) -> Bool {
+    open func isProductPurchased(_ productIdentifier:String) -> Bool {
 //        #if DEBUG
 //            return true
 //        #endif
@@ -84,22 +84,22 @@ public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, S
     }
     
     // MARK: - Setup Methods
-    private func registerAsTransactionObserver(transactionObserver:SKPaymentTransactionObserver) {
-        SKPaymentQueue.defaultQueue().addTransactionObserver(transactionObserver)
+    fileprivate func registerAsTransactionObserver(_ transactionObserver:SKPaymentTransactionObserver) {
+        SKPaymentQueue.default().add(transactionObserver)
     }
     
-    private func getPurchasedProducts(productIdentifiers:Set<String>) -> Set<String> {
+    fileprivate func getPurchasedProducts(_ productIdentifiers:Set<String>) -> Set<String> {
         var purchasedProductIdentifiers:Set<String> = []
         
         for productIdentifier in productIdentifiers {
-            if (userDefaults.boolForKey(productIdentifier)) {
+            if (userDefaults.bool(forKey: productIdentifier)) {
                 purchasedProductIdentifiers.insert(productIdentifier)
             }
         }
         return purchasedProductIdentifiers
     }
     
-    private func setupProductsRequest(productIdentifiers:Set<String>, delegate:SKProductsRequestDelegate) -> SKProductsRequest  {
+    fileprivate func setupProductsRequest(_ productIdentifiers:Set<String>, delegate:SKProductsRequestDelegate) -> SKProductsRequest  {
         let productsRequest = SKProductsRequest(productIdentifiers: productIdentifiers)
         productsRequest.delegate = delegate
         
@@ -107,65 +107,65 @@ public class InAppPurchaseController : NSObject, SKPaymentTransactionObserver, S
     }
     
     // MARK: - Receipt Validation Return
-    private func validatedReceiptForTransaction(paymentTransaction:SKPaymentTransaction, validated:Bool) {
+    fileprivate func validatedReceiptForTransaction(_ paymentTransaction:SKPaymentTransaction, validated:Bool) {
         if (validated == true) {
-            userDefaults.setBool(true, forKey: paymentTransaction.payment.productIdentifier)
+            userDefaults.set(true, forKey: paymentTransaction.payment.productIdentifier)
             self.purchasedProductIdentifiers.insert(paymentTransaction.payment.productIdentifier)
         }
         self.delegate?.inAppPurchaseController?(self, didFinishValidatingTransactionReceipt: paymentTransaction, withStatus: validated)
-        SKPaymentQueue.defaultQueue().finishTransaction(paymentTransaction)
+        SKPaymentQueue.default().finishTransaction(paymentTransaction)
     }
     
     // MARK: - SKProductsRequestDelegate
-    public func productsRequest(request: SKProductsRequest, didReceiveResponse response: SKProductsResponse) {
+    open func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         request.cancel()
         self.inAppProducts = response.products
         self.didFinishRequestingProducts = true
         self.delegate?.inAppPurchaseController?(self, didFinishRequestingProducts: response.products)
     }
     
-    public func request(request: SKRequest, didFailWithError error: NSError) {
+    open func request(_ request: SKRequest, didFailWithError error: Error) {
         request.cancel()
-        self.delegate?.inAppPurchaseController?(self, didFailRequestingProductsWithError: error)
+        self.delegate?.inAppPurchaseController?(self, didFailRequestingProductsWithError: error as NSError)
     }
     
     // MARK: - SKPaymentTransactionObserver
-    public func paymentQueue(queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+    open func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
         for paymentTransaction in transactions {
-            self.delegate?.inAppPurchaseController?(self, didUpdatePaymentTransaction: paymentTransaction, withError: paymentTransaction.error)
+            self.delegate?.inAppPurchaseController?(self, didUpdatePaymentTransaction: paymentTransaction, withError: paymentTransaction.error as NSError?)
             
             switch paymentTransaction.transactionState {
-            case .Purchasing:
+            case .purchasing:
                 break
-            case .Purchased:
-                paymentTransaction.validateReceipt(self.validatedReceiptForTransaction)
+            case .purchased:
+                validatedReceiptForTransaction(paymentTransaction, validated: true)
                 break
-            case .Restored:
-                paymentTransaction.validateReceipt(self.validatedReceiptForTransaction)
+            case .restored:
+                validatedReceiptForTransaction(paymentTransaction, validated: true)
                 break
-            case .Deferred:
+            case .deferred:
                 break
-            case .Failed:
+            case .failed:
                 self.delegate?.inAppPurchaseController?(self, didFailTransaction: paymentTransaction)
-                SKPaymentQueue.defaultQueue().finishTransaction(paymentTransaction)
+                SKPaymentQueue.default().finishTransaction(paymentTransaction)
                 break
             }
         }
     }
     
-    public func paymentQueueRestoreCompletedTransactionsFinished(queue: SKPaymentQueue) {
+    open func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
         self.delegate?.inAppPurchaseControllerDidFinishRestoringTransactions?(self)
     }
     
-    public func paymentQueue(queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: NSError) {
-        self.delegate?.inAppPurchaseController?(self, restoreCompletedTransactionsFailedWithError: error)
+    open func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
+        self.delegate?.inAppPurchaseController?(self, restoreCompletedTransactionsFailedWithError: error as NSError)
     }
     
-    public func paymentQueue(queue: SKPaymentQueue, removedTransactions transactions: [SKPaymentTransaction]) {
+    open func paymentQueue(_ queue: SKPaymentQueue, removedTransactions transactions: [SKPaymentTransaction]) {
         self.delegate?.inAppPurchaseController?(self, didRemoveTransactions: transactions)
     }
     
-    public func paymentQueue(queue: SKPaymentQueue, updatedDownloads downloads: [SKDownload]) {
+    open func paymentQueue(_ queue: SKPaymentQueue, updatedDownloads downloads: [SKDownload]) {
         self.delegate?.inAppPurchaseController?(self, didUpdateDownloads: downloads)
     }
     
